@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-n = 10
+n = 256
 Du, Dv, F, k = 0.16, 0.08, 0.035, 0.065  # Bacteria 1
 # Du, Dv, F, k = 0.14, 0.06, 0.035, 0.065  # Bacteria 2
 # Du, Dv, F, k = 0.16, 0.08, 0.060, 0.062  # Coral
@@ -18,30 +18,22 @@ Du, Dv, F, k = 0.16, 0.08, 0.035, 0.065  # Bacteria 1
 Z = np.zeros((n+2, n+2), [('U', np.double), ('V', np.double)])
 
 U, V = Z['U'], Z['V']
-print(U)
 '''
 [1:-1, 1:-1]
 Select 2nd row to the 2nd last row
 Select 2nd column to the 2nd last column
 '''
-u, v = U[1:-1, 1:-1], V[1:-1, 1:-1]
+u, v = U[1:-1, 1:-1], V[1:-1, 1:-
+                        1]  # indexing returns a view (same array as U)
 
 
-'''
-To Figure Out:
-How does U get from 0s to having some 1s?
-Seems like u[...] = 1.0 has something to do with it
-'''
 r = 20
-u[...] = 1.0
-print(U)
+u[...] = 1.0  # changing u here also changes U
 U[n//2-r:n//2+r, n//2-r:n//2+r] = 0.50
 V[n//2-r:n//2+r, n//2-r:n//2+r] = 0.25
-print(U)
 u += 0.05*np.random.uniform(-1, +1, (n, n))
 v += 0.05*np.random.uniform(-1, +1, (n, n))
 
-print(4*U[1:-1, 1:-1])
 
 def update(frame):
     global U, V, u, v, im
@@ -54,3 +46,26 @@ def update(frame):
         Lv = (V[0:-2, 1:-1] +
               V[1:-1, 0:-2] - 4*V[1:-1, 1:-1] + V[1:-1, 2:] +
               V[2:, 1:-1])
+        uvv = u*v*v
+        u += (Du*Lu - uvv + F*(1-u))
+        v += (Dv*Lv + uvv - (F+k)*v)
+
+    im.set_data(V)
+    im.set_clim(vmin=V.min(), vmax=V.max())
+
+
+fig = plt.figure(figsize=(4, 4))
+fig.add_axes([0.0, 0.0, 1.0, 1.0], frameon=False)
+im = plt.imshow(V, interpolation='bicubic', cmap=plt.cm.viridis)
+plt.xticks([]), plt.yticks([])
+
+# Writer = animation.writers['ffmpeg']
+# writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+
+anim = animation.FuncAnimation(fig, update, interval=10, frames=100)
+# anim.save('output/output.mp4', writer=writer)
+
+# animation.save('gray-scott-1.mp4', fps=40, dpi=80, bitrate=-1, codec="libx264",
+#                extra_args=['-pix_fmt', 'yuv420p'],
+#                metadata={'artist':'Nicolas P. Rougier'})
+plt.show()
